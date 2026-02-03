@@ -17,19 +17,6 @@ from rapidfuzz import fuzz
 import plotly.express as px
 import plotly.graph_objects as go
 
-# Optional: enables Plotly node click -> details panel (network click)
-try:
-    from streamlit_plotly_events import plotly_events  # type: ignore
-    HAS_PLOTLY_EVENTS = True
-except Exception:
-    HAS_PLOTLY_EVENTS = False
-
-
-# ============================================================
-# Files
-# ============================================================
-DEFAULT_DATASET_PATH = "defaultdataset.json"
-
 
 # ============================================================
 # Constants
@@ -53,10 +40,33 @@ GEMINI_MODELS = [
 ANTHROPIC_MODELS = ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"]
 XAI_MODELS = ["grok-4-fast-reasoning", "grok-3-mini"]
 
+# ============================================================
+# Default dataset (user provided)
+# ============================================================
+DEFAULT_DISTRIBUTION_CSV = """SupplierID,Deliverdate,CustomerID,LicenseNo,Category,UDID,DeviceNAME,LotNO,SerNo,Model,Number
+B00079,20251107,C05278,衛部醫器輸字第033951號,E.3610植入式心律器之脈搏產生器,00802526576331,“波士頓科技”英吉尼心臟節律器,890057,,L111,1
+B00079,20251106,C06030,衛部醫器輸字第033951號,E.3610植入式心律器之脈搏產生器,00802526576331,“波士頓科技”英吉尼心臟節律器,872177,,L111,1
+B00079,20251106,C00123,衛部醫器輸字第033951號,E.3610植入式心律器之脈搏產生器,00802526576331,“波士頓科技”英吉尼心臟節律器,889490,,L111,1
+B00079,20251105,C06034,衛部醫器輸字第033951號,E.3610植入式心律器之脈搏產生器,00802526576331,“波士頓科技”英吉尼心臟節律器,889253,,L111,1
+B00079,20251103,C05363,衛部醫器輸字第029100號,E.3610植入式心律器之脈搏產生器,00802526576461,“波士頓科技”艾科雷心臟節律器,869531,,L311,1
+B00079,20251103,C06034,衛部醫器輸字第033951號,E.3610植入式心律器之脈搏產生器,00802526576331,“波士頓科技”英吉尼心臟節律器,889230,,L111,1
+B00079,20251103,C05278,衛部醫器輸字第029100號,E.3610植入式心律器之脈搏產生器,00802526576485,“波士頓科技”艾科雷心臟節律器,182310,,L331,1
+B00051,20251030,C02822,衛部醫器輸字第028560號,L.5980經陰道骨盆腔器官脫垂治療用手術網片,08437007606478,“尼奧麥迪克”舒兒莉芙特骨盆懸吊系統,CC250520,19,CPS02,1
+B00079,20251030,C00123,衛部醫器輸字第033951號,E.3610植入式心律器之脈搏產生器,00802526576324,“波士頓科技”英吉尼心臟節律器,915900,,L110,1
+B00051,20251030,C02822,衛部醫器輸字第028560號,L.5980經陰道骨盆腔器官脫垂治療用手術網片,08437007606478,“尼奧麥迪克”舒兒莉芙特骨盆懸吊系統,CC250520,20,CPS02,1
+B00051,20251029,C02082,衛部醫器輸字第028560號,L.5980經陰道骨盆腔器官脫垂治療用手術網片,08437007606478,“尼奧麥迪克”舒兒莉芙特骨盆懸吊系統,CC250326,4,CPS02,1
+B00051,20251029,C02082,衛部醫器輸字第028560號,L.5980經陰道骨盆腔器官脫垂治療用手術網片,08437007606478,“尼奧麥迪克”舒兒莉芙特骨盆懸吊系統,CC250326,5,CPS02,1
+B00209,20251028,C03210,衛部醫器輸字第026988號,L.5980經陰道骨盆腔器官脫垂治療用手術網片,07798121803473,“博美敦”凱莉星脫垂修補系統,,00012150,Calistar S,1
+B00051,20251028,C01774,衛部醫器輸字第030820號,L.5980經陰道骨盆腔器官脫垂治療用手術網片,08437007606515,“尼奧麥迪克”蜜普思微創骨盆懸吊系統,MB241203,140,KITMIPS02,1
+B00209,20251028,C03210,衛部醫器輸字第026988號,L.5980經陰道骨盆腔器官脫垂治療用手術網片,07798121803473,“博美敦”凱莉星脫垂修補系統,,00012154,Calistar S,1
+B00051,20251028,C01773,衛部醫器輸字第028560號,L.5980經陰道骨盆腔器官脫垂治療用手術網片,08437007606478,“尼奧麥迪克”舒兒莉芙特骨盆懸吊系統,CC241128,85,CPS02,1
+B00209,20251028,C03210,衛部醫器輸字第026988號,L.5980經陰道骨盆腔器官脫垂治療用手術網片,07798121803473,“博美敦”凱莉星脫垂修補系統,,00012155,Calistar S,1
+B00051,20251028,C01774,衛部醫器輸字第030820號,L.5980經陰道骨盆腔器官脫垂治療用手術網片,08437007606515,“尼奧麥迪克”蜜普思微創骨盆懸吊系統,MB241203,142,KITMIPS02,1
+B00209,20251028,C03210,衛部醫器輸字第026988號,L.5980經陰道骨盆腔器官脫垂治療用手術網片,07798121803473,“博美敦”凱莉星脫垂修補系統,,00012156,Calistar S,1
+"""
 
 # ============================================================
 # Default SKILL.md + agents.yaml (fallback)
-# NOTE: This is not "default dataset"; it's app metadata/prompt defaults.
 # ============================================================
 DEFAULT_SKILL_MD = """# SKILL — WOW 配送/流向分析代理共用系統提示詞（System Prompt）
 
@@ -93,7 +103,6 @@ agents:
       - 建議的儀表板視覺化與篩選器
 """
 
-
 # ============================================================
 # i18n (English + Traditional Chinese)
 # ============================================================
@@ -104,7 +113,6 @@ STRINGS = {
         "nav_dashboard": "Interactive Dashboard",
         "nav_agents": "Agent Studio",
         "nav_config": "Config Studio (agents.yaml / SKILL.md)",
-        "nav_compare": "Compare Two Datasets",
         "settings": "Settings",
         "theme": "Theme",
         "language": "Language",
@@ -165,14 +173,6 @@ STRINGS = {
         "standardize_now": "Standardize now",
         "diff": "Diff",
         "invalid_yaml": "YAML invalid",
-        "dataset_a": "Dataset A",
-        "dataset_b": "Dataset B",
-        "compare_summary": "Comparison Summary (Markdown)",
-        "ai_prompt": "AI Prompt (keep with dataset)",
-        "ai_run": "Run AI Summary",
-        "click_hint": "Click a node to show detailed records (requires streamlit-plotly-events).",
-        "reload_default": "Reload default dataset",
-        "default_missing": "defaultdataset.json not found. Please add it to your repo.",
     },
     "zh-TW": {
         "app_title": "WOW 配送/流向分析工作室",
@@ -180,7 +180,6 @@ STRINGS = {
         "nav_dashboard": "互動儀表板",
         "nav_agents": "代理工作室",
         "nav_config": "設定工作室（agents.yaml / SKILL.md）",
-        "nav_compare": "兩份資料集比較",
         "settings": "設定",
         "theme": "主題",
         "language": "語言",
@@ -241,14 +240,6 @@ STRINGS = {
         "standardize_now": "立即標準化",
         "diff": "差異（Diff）",
         "invalid_yaml": "YAML 無效",
-        "dataset_a": "資料集 A",
-        "dataset_b": "資料集 B",
-        "compare_summary": "比較摘要（Markdown）",
-        "ai_prompt": "AI 提示詞（綁定資料集）",
-        "ai_run": "執行 AI 摘要",
-        "click_hint": "點擊網路圖節點可顯示詳細資料（需要 streamlit-plotly-events）。",
-        "reload_default": "重新載入預設資料集",
-        "default_missing": "找不到 defaultdataset.json，請把檔案放到 repo 根目錄。",
     }
 }
 
@@ -482,66 +473,6 @@ def call_llm_text(provider: str, model: str, api_key: str, system: str, user: st
 
 
 # ============================================================
-# Default dataset loader (NEW)
-# - app.py no longer contains default dataset rows
-# ============================================================
-def load_defaultdataset_df() -> pd.DataFrame:
-    """
-    Expected defaultdataset.json shapes (supports either):
-    A) {"version":"1.0","records":[{...},{...}]}
-    B) {"version":"1.0","format":"csv","data":"col1,col2\\n..."}
-    """
-    if not os.path.exists(DEFAULT_DATASET_PATH):
-        return pd.DataFrame()
-
-    with open(DEFAULT_DATASET_PATH, "r", encoding="utf-8") as f:
-        obj = json.load(f)
-
-    if isinstance(obj, dict):
-        if isinstance(obj.get("records"), list):
-            return pd.DataFrame(obj["records"])
-        if (obj.get("format") == "csv") and isinstance(obj.get("data"), str):
-            return pd.read_csv(io.StringIO(obj["data"]))
-        if isinstance(obj.get("data"), list):
-            return pd.DataFrame(obj["data"])
-    if isinstance(obj, list):
-        return pd.DataFrame(obj)
-
-    return pd.DataFrame()
-
-
-def reload_default_dataset_into_main():
-    raw = load_defaultdataset_df()
-    st.session_state["raw_df"] = raw
-    if raw is None or raw.empty:
-        st.session_state["std_df"] = pd.DataFrame(columns=CANON)
-        st.session_state["std_report"] = "No defaultdataset.json or empty dataset."
-    else:
-        std, rep = standardize_distribution_df(raw)
-        st.session_state["std_df"] = std
-        st.session_state["std_report"] = rep
-
-
-def reload_default_dataset_into_compare():
-    raw = load_defaultdataset_df()
-    st.session_state["cmpA_raw"] = raw.copy() if isinstance(raw, pd.DataFrame) else pd.DataFrame()
-    st.session_state["cmpB_raw"] = raw.copy() if isinstance(raw, pd.DataFrame) else pd.DataFrame()
-
-    if raw is None or raw.empty:
-        st.session_state["cmpA_std"] = pd.DataFrame(columns=CANON)
-        st.session_state["cmpB_std"] = pd.DataFrame(columns=CANON)
-        st.session_state["cmpA_report"] = "No defaultdataset.json or empty dataset."
-        st.session_state["cmpB_report"] = "No defaultdataset.json or empty dataset."
-    else:
-        stdA, repA = standardize_distribution_df(st.session_state["cmpA_raw"])
-        stdB, repB = standardize_distribution_df(st.session_state["cmpB_raw"])
-        st.session_state["cmpA_std"] = stdA
-        st.session_state["cmpB_std"] = stdB
-        st.session_state["cmpA_report"] = repA
-        st.session_state["cmpB_report"] = repB
-
-
-# ============================================================
 # Parsing + Standardization (Distribution dataset)
 # ============================================================
 CANON = [
@@ -720,16 +651,11 @@ def standardize_distribution_df(df: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
 
 
 def df_to_json_records(df: pd.DataFrame) -> str:
-    """
-    NOTE: Keep your current function behavior. If you hit Timestamp JSON issues,
-    fix by converting deliver_date to str or using df.to_json(date_format='iso').
-    (You previously asked bugfix guidance; not changing here.)
-    """
-    return json.dumps(df.to_dict(orient="records"), ensure_ascii=False, indent=2)
+    return json.dumps(df.to_dict(orient="records"), ensure_ascii=False, indent=2, default=str)
 
 
 # ============================================================
-# Summary + filtering
+# Filtering + summary
 # ============================================================
 def compute_summary(df: pd.DataFrame) -> Dict[str, Any]:
     if df is None or df.empty:
@@ -743,7 +669,6 @@ def compute_summary(df: pd.DataFrame) -> Dict[str, Any]:
         "unique_licenses": int(df["license_no"].nunique(dropna=True)),
         "unique_models": int(df["model"].nunique(dropna=True)),
     }
-
     if "deliver_date" in df.columns:
         dmin = df["deliver_date"].min()
         dmax = df["deliver_date"].max()
@@ -804,7 +729,7 @@ def apply_filters(df: pd.DataFrame,
 
 
 # ============================================================
-# Visualizations (same as your current version)
+# Visualizations (Original 6 + NEW 5 WOW features)
 # ============================================================
 def build_sankey(df: pd.DataFrame) -> go.Figure:
     if df is None or df.empty:
@@ -856,6 +781,10 @@ def build_sankey(df: pd.DataFrame) -> go.Figure:
 
 
 def build_layered_network(df: pd.DataFrame, max_nodes_per_layer: int = 40) -> go.Figure:
+    """
+    BUGFIX: Plotly marker.color cannot accept arbitrary strings in graph_objects Scatter.
+            We map layer names to HEX colors explicitly.
+    """
     if df is None or df.empty:
         return go.Figure()
 
@@ -886,11 +815,12 @@ def build_layered_network(df: pd.DataFrame, max_nodes_per_layer: int = 40) -> go
         ("Customer", customers, 3.0),
     ]
 
+    # Layer color mapping (WOW)
     layer_colors = {
-        "Supplier": "#FF7F50",
-        "License": "#5DADE2",
-        "Model": "#58D68D",
-        "Customer": "#AF7AC5",
+        "Supplier": "#FF7F50",   # coral
+        "License": "#5DADE2",    # blue
+        "Model": "#58D68D",      # green
+        "Customer": "#AF7AC5",   # purple
     }
 
     pos = {}
@@ -906,8 +836,8 @@ def build_layered_network(df: pd.DataFrame, max_nodes_per_layer: int = 40) -> go
             node_text.append(key)
             node_color_hex.append(layer_colors.get(lname, "#CCCCCC"))
 
-    def add_edges(pairs: pd.DataFrame, a_name: str, b_name: str, a_col: str, b_col: str) -> Tuple[List[float], List[float]]:
-        ex, ey = [], []
+    def add_edges(pairs: pd.DataFrame, a_name: str, b_name: str, a_col: str, b_col: str) -> Tuple[List[float], List[float], List[float]]:
+        ex, ey, ew = [], [], []
         for _, r in pairs.iterrows():
             a = f"{a_name}:{r[a_col]}"
             b = f"{b_name}:{r[b_col]}"
@@ -917,15 +847,17 @@ def build_layered_network(df: pd.DataFrame, max_nodes_per_layer: int = 40) -> go
             x1, y1 = pos[b]
             ex += [x0, x1, None]
             ey += [y0, y1, None]
-        return ex, ey
+            w = float(r["quantity"]) if "quantity" in r else 1.0
+            ew += [w, w, None]
+        return ex, ey, ew
 
     e1 = g2.groupby(["supplier_id", "license_no"])["quantity"].sum().reset_index()
     e2 = g2.groupby(["license_no", "model"])["quantity"].sum().reset_index()
     e3 = g2.groupby(["model", "customer_id"])["quantity"].sum().reset_index()
 
-    ex1, ey1 = add_edges(e1, "Supplier", "License", "supplier_id", "license_no")
-    ex2, ey2 = add_edges(e2, "License", "Model", "license_no", "model")
-    ex3, ey3 = add_edges(e3, "Model", "Customer", "model", "customer_id")
+    ex1, ey1, _ = add_edges(e1, "Supplier", "License", "supplier_id", "license_no")
+    ex2, ey2, _ = add_edges(e2, "License", "Model", "license_no", "model")
+    ex3, ey3, _ = add_edges(e3, "Model", "Customer", "model", "customer_id")
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(
@@ -937,6 +869,7 @@ def build_layered_network(df: pd.DataFrame, max_nodes_per_layer: int = 40) -> go
         showlegend=False,
     ))
 
+    # Keep text minimal to avoid clutter
     display_labels = []
     for s in node_text:
         v = s.split(":", 1)[1]
@@ -1021,7 +954,9 @@ def build_heatmap(df: pd.DataFrame, top_suppliers: int = 20, top_models: int = 3
     return fig
 
 
+# ---------------- NEW WOW FEATURES (5) ----------------
 def build_pareto(df: pd.DataFrame, col: str, top_n: int = 20) -> go.Figure:
+    """WOW #7: Pareto (bar + cumulative %) for a given dimension."""
     if df is None or df.empty or col not in df.columns:
         return go.Figure()
     g = df.groupby(col)["quantity"].sum().reset_index().sort_values("quantity", ascending=False)
@@ -1030,6 +965,7 @@ def build_pareto(df: pd.DataFrame, col: str, top_n: int = 20) -> go.Figure:
     if total <= 0:
         return go.Figure()
     g["cum_pct"] = (g["quantity"].cumsum() / total) * 100.0
+
     fig = go.Figure()
     fig.add_trace(go.Bar(x=g[col].astype(str), y=g["quantity"], name="Quantity"))
     fig.add_trace(go.Scatter(x=g[col].astype(str), y=g["cum_pct"], name="Cumulative %", yaxis="y2", mode="lines+markers"))
@@ -1044,6 +980,7 @@ def build_pareto(df: pd.DataFrame, col: str, top_n: int = 20) -> go.Figure:
 
 
 def build_supplier_customer_matrix(df: pd.DataFrame, top_suppliers: int = 15, top_customers: int = 25) -> go.Figure:
+    """WOW #8: Supplier × Customer adjacency heatmap (flow intensity)."""
     if df is None or df.empty:
         return go.Figure()
     s_top = df.groupby("supplier_id")["quantity"].sum().sort_values(ascending=False).head(top_suppliers).index
@@ -1058,6 +995,7 @@ def build_supplier_customer_matrix(df: pd.DataFrame, top_suppliers: int = 15, to
 
 
 def build_weekday_week_heatmap(df: pd.DataFrame) -> go.Figure:
+    """WOW #9: Week × Weekday heatmap (operational rhythm)."""
     if df is None or df.empty:
         return go.Figure()
     tmp = df.dropna(subset=["deliver_date"]).copy()
@@ -1066,8 +1004,10 @@ def build_weekday_week_heatmap(df: pd.DataFrame) -> go.Figure:
     iso = tmp["deliver_date"].dt.isocalendar()
     tmp["iso_week"] = iso.week.astype(int)
     tmp["weekday"] = tmp["deliver_date"].dt.day_name()
+    # order weekdays
     weekday_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     tmp["weekday"] = pd.Categorical(tmp["weekday"], categories=weekday_order, ordered=True)
+
     pivot = tmp.pivot_table(index="weekday", columns="iso_week", values="quantity", aggfunc="sum", fill_value=0).sort_index()
     fig = px.imshow(pivot, aspect="auto", color_continuous_scale="Plasma")
     fig.update_layout(height=420, margin=dict(l=10, r=10, t=10, b=10))
@@ -1075,6 +1015,7 @@ def build_weekday_week_heatmap(df: pd.DataFrame) -> go.Figure:
 
 
 def build_treemap(df: pd.DataFrame) -> go.Figure:
+    """WOW #10: Treemap for hierarchy overview (Supplier → License → Model)."""
     if df is None or df.empty:
         return go.Figure()
     tmp = df.fillna("∅").copy()
@@ -1084,6 +1025,7 @@ def build_treemap(df: pd.DataFrame) -> go.Figure:
 
 
 def build_quantity_box(df: pd.DataFrame, by_col: str = "supplier_id", top_n: int = 15) -> go.Figure:
+    """WOW #11: Quantity distribution boxplot for top entities (variability)."""
     if df is None or df.empty or by_col not in df.columns:
         return go.Figure()
     top = df.groupby(by_col)["quantity"].sum().sort_values(ascending=False).head(top_n).index
@@ -1096,9 +1038,14 @@ def build_quantity_box(df: pd.DataFrame, by_col: str = "supplier_id", top_n: int
 
 
 # ============================================================
-# Agents YAML standardization + optional LLM standardizer (unchanged)
+# Agents YAML standardization + optional LLM standardizer
 # ============================================================
 def standardize_agents_obj(obj: Any) -> Dict[str, Any]:
+    """
+    Heuristic standardizer: converts many possible YAML shapes into strict schema:
+    version: "1.0"
+    agents: [{id,name,description,provider,model,temperature,max_tokens,system_prompt,user_prompt}]
+    """
     if obj is None:
         return {"version": "1.0", "agents": []}
 
@@ -1133,10 +1080,12 @@ def standardize_agents_obj(obj: Any) -> Dict[str, Any]:
         model = a.get("model") or a.get("llm") or "gpt-4o-mini"
         model = str(model).strip()
         if model not in pmap.get(provider, []):
+            # keep user model if unknown; but safer: default to first known model
             model = pmap.get(provider, ["gpt-4o-mini"])[0]
 
         temp = a.get("temperature", 0.2)
         mx = a.get("max_tokens", a.get("max_output_tokens", 2500))
+
         system_prompt = a.get("system_prompt") or a.get("system") or a.get("instructions") or a.get("prompt") or ""
         user_prompt = a.get("user_prompt") or a.get("user") or a.get("task") or "請分析提供的內容。"
 
@@ -1212,7 +1161,7 @@ def llm_standardize_agents_yaml(raw_yaml: str, provider: str, model: str, api_ke
 
 SCHEMA (example):
 ```json
-{json.dumps(schema, ensure_ascii=False, indent=2)}
+{json.dumps(schema, ensure_ascii=False, indent=2, default=str)}
 ```
 
 INPUT YAML:
@@ -1222,279 +1171,6 @@ INPUT YAML:
 """
     out = call_llm_text(provider, model, api_key, sys, user, max_tokens=5000, temperature=0.0)
     return out.strip()
-
-
-# ============================================================
-# Compare helpers (kept)
-# ============================================================
-def compute_timeseries(df: pd.DataFrame, freq: str = "D") -> pd.DataFrame:
-    if df is None or df.empty:
-        return pd.DataFrame(columns=["deliver_date", "quantity"])
-    tmp = df.dropna(subset=["deliver_date"]).copy()
-    if tmp.empty:
-        return pd.DataFrame(columns=["deliver_date", "quantity"])
-    g = tmp.groupby(pd.Grouper(key="deliver_date", freq=freq))["quantity"].sum().reset_index()
-    g = g.sort_values("deliver_date")
-    return g
-
-
-def build_compare_kpi_bar(sA: Dict[str, Any], sB: Dict[str, Any], labelA: str, labelB: str) -> go.Figure:
-    keys = [
-        ("rows", "Rows"),
-        ("total_quantity", "Total Qty"),
-        ("unique_suppliers", "Suppliers"),
-        ("unique_licenses", "Licenses"),
-        ("unique_models", "Models"),
-        ("unique_customers", "Customers"),
-    ]
-    data = []
-    for k, name in keys:
-        data.append({"metric": name, "dataset": labelA, "value": float(sA.get(k, 0))})
-        data.append({"metric": name, "dataset": labelB, "value": float(sB.get(k, 0))})
-    dfm = pd.DataFrame(data)
-    fig = px.bar(dfm, x="metric", y="value", color="dataset", barmode="group")
-    fig.update_layout(height=420, margin=dict(l=10, r=10, t=10, b=10))
-    return fig
-
-
-def build_compare_timeseries(tsA: pd.DataFrame, tsB: pd.DataFrame, labelA: str, labelB: str) -> go.Figure:
-    if tsA.empty and tsB.empty:
-        return go.Figure()
-    out = []
-    if not tsA.empty:
-        a = tsA.copy()
-        a["dataset"] = labelA
-        out.append(a)
-    if not tsB.empty:
-        b = tsB.copy()
-        b["dataset"] = labelB
-        out.append(b)
-    dfc = pd.concat(out, ignore_index=True) if out else pd.DataFrame(columns=["deliver_date", "quantity", "dataset"])
-    fig = px.line(dfc, x="deliver_date", y="quantity", color="dataset", markers=True)
-    fig.update_layout(height=420, margin=dict(l=10, r=10, t=10, b=10))
-    return fig
-
-
-def build_compare_top_bar(dfA: pd.DataFrame, dfB: pd.DataFrame, col: str, top_n: int, labelA: str, labelB: str) -> go.Figure:
-    if (dfA is None or dfA.empty) and (dfB is None or dfB.empty):
-        return go.Figure()
-
-    def top(df: pd.DataFrame) -> pd.DataFrame:
-        if df is None or df.empty:
-            return pd.DataFrame(columns=[col, "quantity"])
-        g = df.groupby(col)["quantity"].sum().reset_index()
-        return g
-
-    gA = top(dfA).rename(columns={"quantity": "qty_A"})
-    gB = top(dfB).rename(columns={"quantity": "qty_B"})
-    m = pd.merge(gA, gB, on=col, how="outer").fillna(0)
-    m["total"] = m["qty_A"] + m["qty_B"]
-    m = m.sort_values("total", ascending=False).head(top_n)
-
-    plot = pd.DataFrame({
-        col: m[col].astype(str).tolist() * 2,
-        "dataset": [labelA] * len(m) + [labelB] * len(m),
-        "quantity": m["qty_A"].tolist() + m["qty_B"].tolist(),
-    })
-    fig = px.bar(plot, x=col, y="quantity", color="dataset", barmode="group")
-    fig.update_layout(height=420, margin=dict(l=10, r=10, t=10, b=10))
-    return fig
-
-
-def compare_summary_markdown(sA: Dict[str, Any], sB: Dict[str, Any], labelA: str, labelB: str) -> str:
-    def fmt(v): return f"{v:,}" if isinstance(v, int) else str(v)
-    dqA = fmt(sA.get("total_quantity", 0))
-    dqB = fmt(sB.get("total_quantity", 0))
-    diff_qty = int(sA.get("total_quantity", 0)) - int(sB.get("total_quantity", 0))
-    sign = "+" if diff_qty >= 0 else ""
-    rowsA = int(sA.get("rows", 0))
-    rowsB = int(sB.get("rows", 0))
-
-    md = []
-    md.append(f"# 兩份配送資料比較摘要：{labelA} vs {labelB}")
-    md.append("")
-    md.append("## KPI 對比（彙總）")
-    md.append(f"- **Rows**：{labelA} = {rowsA:,}；{labelB} = {rowsB:,}")
-    md.append(f"- **Total Quantity**：{labelA} = {dqA}；{labelB} = {dqB}；差異（A-B）= **{sign}{diff_qty:,}**")
-    md.append(f"- **Unique Suppliers**：{labelA} = {int(sA.get('unique_suppliers',0)):,}；{labelB} = {int(sB.get('unique_suppliers',0)):,}")
-    md.append(f"- **Unique Licenses**：{labelA} = {int(sA.get('unique_licenses',0)):,}；{labelB} = {int(sB.get('unique_licenses',0)):,}")
-    md.append(f"- **Unique Models**：{labelA} = {int(sA.get('unique_models',0)):,}；{labelB} = {int(sB.get('unique_models',0)):,}")
-    md.append(f"- **Unique Customers**：{labelA} = {int(sA.get('unique_customers',0)):,}；{labelB} = {int(sB.get('unique_customers',0)):,}")
-    md.append("")
-    md.append("## 日期範圍")
-    md.append(f"- {labelA}：{sA.get('date_min','—')} → {sA.get('date_max','—')}")
-    md.append(f"- {labelB}：{sB.get('date_min','—')} → {sB.get('date_max','—')}")
-    md.append("")
-    md.append("## 解讀建議（保守）")
-    md.append("- 若 A/B 的時間範圍不同，請先對齊日期區間後再比較趨勢。")
-    md.append("- 若資料來源不同（不同系統/不同清洗規則），建議先做欄位一致性與重複入帳檢核。")
-    md.append("- 供應商/客戶/型號的 TopN 變化，適合搭配 Network / Sankey 觀察路徑結構差異。")
-    return "\n".join(md).strip()
-
-
-def node_filter(df: pd.DataFrame, layer: str, value: str) -> pd.DataFrame:
-    if df is None or df.empty:
-        return df
-    layer = layer.lower().strip()
-    col_map = {
-        "supplier": "supplier_id",
-        "license": "license_no",
-        "model": "model",
-        "customer": "customer_id",
-    }
-    col = col_map.get(layer)
-    if not col or col not in df.columns:
-        return pd.DataFrame(columns=df.columns)
-    return df[df[col].astype(str) == str(value)].copy().reset_index(drop=True)
-
-
-def build_compare_network_clickable(dfA: pd.DataFrame, dfB: pd.DataFrame, labelA: str, labelB: str,
-                                   max_nodes_per_layer: int = 30) -> Tuple[go.Figure, List[Dict[str, str]]]:
-    if (dfA is None or dfA.empty) and (dfB is None or dfB.empty):
-        return go.Figure(), []
-
-    def top_values(df: pd.DataFrame, col: str) -> List[str]:
-        if df is None or df.empty:
-            return []
-        agg = df.groupby(col, dropna=False)["quantity"].sum().reset_index().fillna("∅")
-        agg = agg.sort_values("quantity", ascending=False)
-        return agg[col].astype(str).head(max_nodes_per_layer).tolist()
-
-    suppliers = sorted(set(top_values(dfA, "supplier_id") + top_values(dfB, "supplier_id")))
-    licenses = sorted(set(top_values(dfA, "license_no") + top_values(dfB, "license_no")))
-    models = sorted(set(top_values(dfA, "model") + top_values(dfB, "model")))
-    customers = sorted(set(top_values(dfA, "customer_id") + top_values(dfB, "customer_id")))
-
-    layers = [
-        ("Supplier", suppliers, 0.0),
-        ("License", licenses, 1.0),
-        ("Model", models, 2.0),
-        ("Customer", customers, 3.0),
-    ]
-
-    def uniq_set(df: pd.DataFrame, col: str) -> set:
-        if df is None or df.empty:
-            return set()
-        return set(df[col].dropna().astype(str).unique().tolist())
-
-    sA = uniq_set(dfA, "supplier_id"); sB = uniq_set(dfB, "supplier_id")
-    lA = uniq_set(dfA, "license_no"); lB = uniq_set(dfB, "license_no")
-    mA = uniq_set(dfA, "model"); mB = uniq_set(dfB, "model")
-    cA = uniq_set(dfA, "customer_id"); cB = uniq_set(dfB, "customer_id")
-
-    presence_map = {
-        "Supplier": (sA, sB),
-        "License": (lA, lB),
-        "Model": (mA, mB),
-        "Customer": (cA, cB),
-    }
-
-    col_A = "#5DADE2"
-    col_B = "#F5B041"
-    col_both = CORAL
-    col_unknown = "#C0C0C0"
-
-    pos = {}
-    node_x, node_y, node_text, node_color, node_meta = [], [], [], [], []
-    for lname, nodes, x in layers:
-        n = max(1, len(nodes))
-        setA, setB = presence_map.get(lname, (set(), set()))
-        for i, v in enumerate(nodes):
-            y = (i / (n - 1)) if n > 1 else 0.5
-            key = f"{lname}:{v}"
-            pos[key] = (x, y)
-            node_x.append(x); node_y.append(y); node_text.append(key)
-
-            vv = str(v)
-            inA = vv in setA
-            inB = vv in setB
-            if inA and inB:
-                node_color.append(col_both); presence = "both"
-            elif inA:
-                node_color.append(col_A); presence = "A"
-            elif inB:
-                node_color.append(col_B); presence = "B"
-            else:
-                node_color.append(col_unknown); presence = "none"
-
-            node_meta.append({"layer": lname, "value": vv, "presence": presence, "node_key": key})
-
-    def edges(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-        if df is None or df.empty:
-            empty = pd.DataFrame(columns=["a", "b", "quantity"])
-            return empty, empty, empty
-        g = df.groupby(["supplier_id", "license_no", "model", "customer_id"], dropna=False)["quantity"].sum().reset_index().fillna("∅")
-        e1 = g.groupby(["supplier_id", "license_no"])["quantity"].sum().reset_index()
-        e2 = g.groupby(["license_no", "model"])["quantity"].sum().reset_index()
-        e3 = g.groupby(["model", "customer_id"])["quantity"].sum().reset_index()
-        return e1, e2, e3
-
-    e1A, e2A, e3A = edges(dfA)
-    e1B, e2B, e3B = edges(dfB)
-
-    def union_edges(eA: pd.DataFrame, eB: pd.DataFrame, left: str, right: str, left_tag: str, right_tag: str,
-                    top_m: int = 300) -> pd.DataFrame:
-        a = eA.rename(columns={left: "left", right: "right", "quantity": "qA"}) if not eA.empty else pd.DataFrame(columns=["left", "right", "qA"])
-        b = eB.rename(columns={left: "left", right: "right", "quantity": "qB"}) if not eB.empty else pd.DataFrame(columns=["left", "right", "qB"])
-        m = pd.merge(a, b, on=["left", "right"], how="outer").fillna(0)
-        m["qT"] = m["qA"] + m["qB"]
-        m = m.sort_values("qT", ascending=False).head(top_m)
-        m["from_key"] = left_tag + ":" + m["left"].astype(str)
-        m["to_key"] = right_tag + ":" + m["right"].astype(str)
-        return m
-
-    U1 = union_edges(e1A, e1B, "supplier_id", "license_no", "Supplier", "License")
-    U2 = union_edges(e2A, e2B, "license_no", "model", "License", "Model")
-    U3 = union_edges(e3A, e3B, "model", "customer_id", "Model", "Customer")
-    U = pd.concat([U1, U2, U3], ignore_index=True)
-
-    ex, ey = [], []
-    for _, r in U.iterrows():
-        a = r["from_key"]; b = r["to_key"]
-        if a not in pos or b not in pos:
-            continue
-        x0, y0 = pos[a]
-        x1, y1 = pos[b]
-        ex += [x0, x1, None]
-        ey += [y0, y1, None]
-
-    display_labels = []
-    for s in node_text:
-        v = s.split(":", 1)[1]
-        display_labels.append(v if len(v) <= 14 else (v[:12] + "…"))
-
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=ex, y=ey,
-        mode="lines",
-        line=dict(width=1, color="rgba(180,180,200,0.28)"),
-        hoverinfo="skip",
-        showlegend=False,
-    ))
-    fig.add_trace(go.Scatter(
-        x=node_x, y=node_y,
-        mode="markers+text",
-        text=display_labels,
-        textposition="middle right",
-        marker=dict(size=11, color=node_color, line=dict(width=1, color="rgba(255,255,255,0.25)")),
-        hovertext=[f"{m['node_key']} | presence={m['presence']} ({labelA}={m['presence'] in ['A','both']}, {labelB}={m['presence'] in ['B','both']})" for m in node_meta],
-        hoverinfo="text",
-        showlegend=False,
-    ))
-    fig.update_layout(
-        height=620,
-        margin=dict(l=10, r=10, t=10, b=10),
-        xaxis=dict(
-            tickmode="array",
-            tickvals=[0, 1, 2, 3],
-            ticktext=["Supplier", "License", "Model", "Customer"],
-            showgrid=False,
-            zeroline=False,
-        ),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        title=f"Compare Network: {labelA} vs {labelB}",
-    )
-    return fig, node_meta
 
 
 # ============================================================
@@ -1509,6 +1185,8 @@ def ss_init():
     st.session_state.setdefault("style", PAINTER_STYLES[0])
     st.session_state.setdefault("api_keys", {})
 
+    st.session_state.setdefault("nav", "Dashboard")
+
     st.session_state.setdefault("source_mode", "default")
     st.session_state.setdefault("paste_text", "")
     st.session_state.setdefault("raw_df", pd.DataFrame())
@@ -1521,46 +1199,13 @@ def ss_init():
     st.session_state.setdefault("skill_md_text", DEFAULT_SKILL_MD)
     st.session_state.setdefault("agents_yaml_text", DEFAULT_AGENTS_YAML)
     st.session_state.setdefault("agents_cfg", {"version": "1.0", "agents": []})
-    st.session_state.setdefault("agents_yaml_diff", "")
 
     # agent execution
     st.session_state.setdefault("agent_runs", [])
     st.session_state.setdefault("agent_input_override", "")
 
-    # compare module state
-    st.session_state.setdefault("cmpA_mode", "default")
-    st.session_state.setdefault("cmpB_mode", "default")
-    st.session_state.setdefault("cmpA_paste", "")
-    st.session_state.setdefault("cmpB_paste", "")
-    st.session_state.setdefault("cmpA_raw", pd.DataFrame())
-    st.session_state.setdefault("cmpB_raw", pd.DataFrame())
-    st.session_state.setdefault("cmpA_std", pd.DataFrame(columns=CANON))
-    st.session_state.setdefault("cmpB_std", pd.DataFrame(columns=CANON))
-    st.session_state.setdefault("cmpA_report", "")
-    st.session_state.setdefault("cmpB_report", "")
-
-    st.session_state.setdefault("cmpA_prompt", "請摘要資料集 A 的關鍵特徵與異常假說（保守，不捏造）。")
-    st.session_state.setdefault("cmpB_prompt", "請摘要資料集 B 的關鍵特徵與異常假說（保守，不捏造）。")
-    st.session_state.setdefault("cmpCompare_prompt", "請比較 A vs B 的差異（KPI、TopN、趨勢、路徑結構），並提出下一步。")
-
-    st.session_state.setdefault("cmp_provider", "openai")
-    st.session_state.setdefault("cmp_model", OPENAI_MODELS[0])
-    st.session_state.setdefault("cmp_max_tokens", 4500)
-    st.session_state.setdefault("cmp_temperature", 0.2)
-
-    st.session_state.setdefault("cmp_ai_note", "")
-    st.session_state.setdefault("cmp_clicked_node", None)
-
 
 ss_init()
-
-# Load defaultdataset.json on start (NEW)
-if st.session_state["source_mode"] == "default" and st.session_state["raw_df"].empty and st.session_state["std_df"].empty:
-    reload_default_dataset_into_main()
-
-# Also prefill compare defaults (optional)
-if st.session_state["cmpA_raw"].empty and st.session_state["cmpB_raw"].empty:
-    reload_default_dataset_into_compare()
 
 lang = st.session_state["lang"]
 theme = st.session_state["theme"]
@@ -1571,7 +1216,7 @@ st.markdown("<div class='fab'>WOW</div><div class='fab-sub'>Distribution Studio<
 
 
 # ============================================================
-# Status chips
+# WOW Status chips
 # ============================================================
 def status_chip(label: str, env_primary: str) -> str:
     key, src = get_api_key(env_primary)
@@ -1633,7 +1278,7 @@ st.markdown(inject_css(theme, style["accent"]), unsafe_allow_html=True)
 
 
 # ============================================================
-# Sidebar: API Keys + Reload Default Dataset (NEW)
+# Sidebar: API Keys (hide input if env exists)
 # ============================================================
 with st.sidebar:
     st.markdown(f"<div class='wow-card'><h4 style='margin:0'>{t(lang,'api_keys')}</h4></div>", unsafe_allow_html=True)
@@ -1653,16 +1298,6 @@ with st.sidebar:
     api_key_block("xAI", "XAI_API_KEY")
 
     st.divider()
-    st.markdown(f"<div class='wow-card'><h4 style='margin:0'>Default Dataset</h4></div>", unsafe_allow_html=True)
-    if not os.path.exists(DEFAULT_DATASET_PATH):
-        st.warning(t(lang, "default_missing"))
-    if st.button(t(lang, "reload_default"), use_container_width=True, key="reload_default_btn"):
-        reload_default_dataset_into_main()
-        reload_default_dataset_into_compare()
-        st.success("Reloaded default dataset.")
-        st.rerun()
-
-    st.divider()
     if st.button(t(lang, "clear_session"), use_container_width=True, key="clear_session_btn"):
         for k in list(st.session_state.keys()):
             del st.session_state[k]
@@ -1672,11 +1307,11 @@ with st.sidebar:
 # ============================================================
 # Navigation + dataset mode + optional instructions
 # ============================================================
-nav = st.columns([1.7, 1.3, 3.0], vertical_alignment="center")
+nav = st.columns([1.5, 1.2, 3.3], vertical_alignment="center")
 with nav[0]:
     page = st.selectbox(
         "Navigation",
-        [t(lang, "nav_dashboard"), t(lang, "nav_data"), t(lang, "nav_agents"), t(lang, "nav_compare"), t(lang, "nav_config")],
+        [t(lang, "nav_dashboard"), t(lang, "nav_data"), t(lang, "nav_agents"), t(lang, "nav_config")],
         index=0,
         key="nav_select",
     )
@@ -1697,7 +1332,7 @@ with nav[2]:
 
 
 # ============================================================
-# Shared: Data loading UI (single dataset) — UPDATED default branch
+# Shared: Data loading UI
 # ============================================================
 def load_data_ui():
     source_mode = st.session_state["source_mode"]
@@ -1705,12 +1340,8 @@ def load_data_ui():
 
     raw_df = None
     if source_mode == "default":
-        raw_df = load_defaultdataset_df()
-        if raw_df is None or raw_df.empty:
-            st.warning(t(lang, "default_missing"))
-        else:
-            st.caption(f"Loaded default dataset from: {DEFAULT_DATASET_PATH}")
-        st.session_state["raw_df"] = raw_df
+        raw_df = parse_dataset_blob(DEFAULT_DISTRIBUTION_CSV)
+        st.caption("Loaded default dataset embedded in app.py")
 
     elif source_mode == "paste":
         st.session_state["paste_text"] = st.text_area(
@@ -1741,6 +1372,8 @@ def load_data_ui():
         st.warning("No dataset loaded yet.")
         return
 
+    st.session_state["raw_df"] = raw_df
+
     with st.expander(t(lang, "preview_20") + " (raw)", expanded=False):
         st.dataframe(raw_df.head(20), use_container_width=True, height=240)
 
@@ -1751,18 +1384,17 @@ def load_data_ui():
 
 
 # ============================================================
-# Config Studio / Data Studio / Agents / Compare / Dashboard
-# (Same as your current version, except:
-#  - Data Studio page now also includes a reload default dataset button
-#  - Compare loader uses defaultdataset.json for "default" mode
+# Config Studio: agents.yaml + SKILL.md module (NEW)
 # ============================================================
-
 def config_studio_page():
     st.markdown(f"<div class='wow-card'><h3 style='margin:0'>{t(lang,'nav_config')}</h3></div>", unsafe_allow_html=True)
+
     tabs = st.tabs(["agents.yaml", "SKILL.md", "Agent Editor (UI)"])
 
+    # ---------- agents.yaml ----------
     with tabs[0]:
         left, right = st.columns([1.05, 0.95], gap="large")
+
         with left:
             st.markdown(f"<div class='wow-mini'><b>{t(lang,'paste_yaml')}</b></div>", unsafe_allow_html=True)
             st.session_state["agents_yaml_text"] = st.text_area(
@@ -1771,6 +1403,7 @@ def config_studio_page():
                 height=420,
                 key="agents_yaml_editor",
             )
+
             u = st.file_uploader(t(lang, "upload_yaml"), type=["yml", "yaml"], key="upload_agents_yaml")
             if u:
                 st.session_state["agents_yaml_text"] = u.read().decode("utf-8", errors="ignore")
@@ -1785,7 +1418,8 @@ def config_studio_page():
                         st.error(f"{t(lang,'invalid_yaml')}: {err}")
                     else:
                         standardized = dump_agents_yaml(cfg)
-                        st.session_state["agents_yaml_diff"] = unified_diff(raw, standardized)
+                        diff = unified_diff(raw, standardized)
+                        st.session_state["agents_yaml_diff"] = diff
                         st.session_state["agents_yaml_text"] = standardized
                         st.session_state["agents_cfg"] = cfg
                         st.success("Standardized (heuristic).")
@@ -1795,7 +1429,6 @@ def config_studio_page():
                     st.session_state["agents_yaml_text"] = DEFAULT_AGENTS_YAML
                     cfg, _ = load_agents_yaml(DEFAULT_AGENTS_YAML)
                     st.session_state["agents_cfg"] = cfg
-                    st.session_state["agents_yaml_diff"] = ""
                     st.rerun()
             with c3:
                 st.download_button(
@@ -1811,13 +1444,16 @@ def config_studio_page():
             st.code(st.session_state.get("agents_yaml_diff", "") or "(no diff yet)")
 
             st.divider()
-            st.markdown(f"<div class='wow-mini'><b>LLM Auto-standardize（可選）</b></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='wow-mini'><b>LLM Auto-standardize（可選，較強）</b></div>", unsafe_allow_html=True)
+            st.caption("若 YAML 完全無法解析或格式過於混亂，可用 LLM 轉成標準 schema（需要 API Key）。")
+
             pmap = provider_model_map()
             prov = st.selectbox(t(lang, "provider"), list(pmap.keys()), index=0, key="llm_std_provider")
             model = st.selectbox(t(lang, "model_select"), pmap[prov], index=0, key="llm_std_model")
+
             if st.button("Use LLM to Standardize agents.yaml", use_container_width=True, key="llm_std_run"):
                 env_primary = {"openai": "OPENAI_API_KEY", "gemini": "GEMINI_API_KEY", "anthropic": "ANTHROPIC_API_KEY", "xai": "XAI_API_KEY"}[prov]
-                api_key, _ = get_api_key(env_primary)
+                api_key, src = get_api_key(env_primary)
                 if not api_key:
                     st.error(f"{env_primary} missing.")
                 else:
@@ -1838,6 +1474,7 @@ def config_studio_page():
                         st.error(f"LLM standardize failed: {e}")
                         st.code(traceback.format_exc())
 
+    # ---------- SKILL.md ----------
     with tabs[1]:
         left, right = st.columns([1.1, 0.9], gap="large")
         with left:
@@ -1866,11 +1503,14 @@ def config_studio_page():
                     use_container_width=True,
                     key="dl_skill_md",
                 )
+
         with right:
             st.markdown(f"<div class='wow-mini'><b>Preview</b></div>", unsafe_allow_html=True)
             st.markdown(st.session_state["skill_md_text"] or "")
 
+    # ---------- Agent Editor (UI) ----------
     with tabs[2]:
+        # Ensure cfg is loaded from YAML text
         cfg, err = load_agents_yaml(st.session_state["agents_yaml_text"])
         if err:
             st.error(f"{t(lang,'invalid_yaml')}: {err}")
@@ -1905,6 +1545,7 @@ def config_studio_page():
         a["user_prompt"] = st.text_area(t(lang, "user_prompt"), value=a.get("user_prompt", ""), height=160, key="agent_editor_user")
 
         if st.button(t(lang, "apply"), use_container_width=True, key="agent_editor_apply"):
+            # write back
             agents[names.index(pick)] = a
             cfg["agents"] = agents
             st.session_state["agents_cfg"] = cfg
@@ -1913,19 +1554,11 @@ def config_studio_page():
             st.rerun()
 
 
+# ============================================================
+# Data Studio
+# ============================================================
 def page_data_studio():
     st.markdown(f"<div class='wow-card'><h3 style='margin:0'>{t(lang,'nav_data')}</h3></div>", unsafe_allow_html=True)
-
-    # NEW: reload defaults at page level too
-    c1, c2 = st.columns([1, 3])
-    with c1:
-        if st.button(t(lang, "reload_default"), use_container_width=True, key="reload_default_data_studio"):
-            reload_default_dataset_into_main()
-            st.success("Reloaded default dataset into main.")
-            st.rerun()
-    with c2:
-        st.caption(f"Default dataset file: `{DEFAULT_DATASET_PATH}`")
-
     load_data_ui()
 
     std_df = st.session_state["std_df"]
@@ -1956,6 +1589,9 @@ def page_data_studio():
         )
 
 
+# ============================================================
+# Dashboard (11 viz, improved layout)
+# ============================================================
 def page_dashboard():
     st.markdown(f"<div class='wow-card'><h3 style='margin:0'>{t(lang,'dashboard')}</h3></div>", unsafe_allow_html=True)
     load_data_ui()
@@ -1964,8 +1600,10 @@ def page_dashboard():
     if df is None or df.empty:
         return
 
+    # Filters
     st.markdown(f"<div class='wow-mini'><b>{t(lang,'filters')}</b></div>", unsafe_allow_html=True)
 
+    # Pre-calc options (avoid heavy UI on huge datasets)
     supplier_opts = sorted(df["supplier_id"].dropna().unique().tolist())
     license_opts = sorted(df["license_no"].dropna().unique().tolist())
     model_opts = sorted(df["model"].dropna().unique().tolist())
@@ -1991,6 +1629,7 @@ def page_dashboard():
         else:
             default_range = (pd.to_datetime(dmin).date(), pd.to_datetime(dmax).date())
             picked = st.date_input(t(lang, "date_range"), value=default_range, key="flt_date")
+            # BUGFIX: Streamlit date_input sometimes returns a single date
             if isinstance(picked, tuple) and len(picked) == 2:
                 date_rng = (picked[0], picked[1])
             else:
@@ -2000,6 +1639,7 @@ def page_dashboard():
 
     df_f = apply_filters(df, supplier_ids, license_nos, models, customer_ids, date_rng, q)
 
+    # Summary
     st.divider()
     st.markdown(f"<div class='wow-mini'><b>{t(lang,'summary')}</b></div>", unsafe_allow_html=True)
     s = compute_summary(df_f)
@@ -2011,6 +1651,10 @@ def page_dashboard():
     k4.metric("Customers", f"{s.get('unique_customers', 0)}")
     k5.metric("Models", f"{s.get('unique_models', 0)}")
 
+    if s.get("date_min") and s.get("date_max"):
+        st.caption(f"Date range: {s['date_min']} → {s['date_max']}")
+
+    # Dashboard tabs (more interactive + tidy)
     st.divider()
     tabs = st.tabs([
         "Flow (Sankey / Network)",
@@ -2023,6 +1667,7 @@ def page_dashboard():
     with tabs[0]:
         st.markdown("<div class='wow-mini'><b>1) Sankey：Supplier → License → Model → Customer</b></div>", unsafe_allow_html=True)
         st.plotly_chart(build_sankey(df_f), use_container_width=True, key="viz_sankey")
+
         st.markdown("<div class='wow-mini'><b>2) 分層配送網路圖（Layered Network）</b></div>", unsafe_allow_html=True)
         st.plotly_chart(build_layered_network(df_f), use_container_width=True, key="viz_network_fixed")
 
@@ -2034,12 +1679,14 @@ def page_dashboard():
         with c2:
             st.markdown("<div class='wow-mini'><b>WOW #9：週次 × 週內節奏（Heatmap）</b></div>", unsafe_allow_html=True)
             st.plotly_chart(build_weekday_week_heatmap(df_f), use_container_width=True, key="viz_week_rhythm")
+
         st.markdown("<div class='wow-mini'><b>4) Top 供應商（Bar）</b></div>", unsafe_allow_html=True)
         st.plotly_chart(build_top_suppliers(df_f), use_container_width=True, key="viz_top_sup")
 
     with tabs[2]:
         st.markdown("<div class='wow-mini'><b>5) Sunburst（Supplier → License → Model → Customer）</b></div>", unsafe_allow_html=True)
         st.plotly_chart(build_sunburst(df_f), use_container_width=True, key="viz_sunburst")
+
         st.markdown("<div class='wow-mini'><b>WOW #10：Treemap（Supplier → License → Model）</b></div>", unsafe_allow_html=True)
         st.plotly_chart(build_treemap(df_f), use_container_width=True, key="viz_treemap")
 
@@ -2054,12 +1701,14 @@ def page_dashboard():
     with tabs[3]:
         st.markdown("<div class='wow-mini'><b>WOW #7：Pareto（Top Customers）</b></div>", unsafe_allow_html=True)
         st.plotly_chart(build_pareto(df_f, "customer_id", top_n=20), use_container_width=True, key="viz_pareto_customer")
+
         st.markdown("<div class='wow-mini'><b>WOW #11：數量變異（Boxplot by Supplier）</b></div>", unsafe_allow_html=True)
         st.plotly_chart(build_quantity_box(df_f, by_col="supplier_id", top_n=15), use_container_width=True, key="viz_box_supplier")
 
     with tabs[4]:
         st.markdown(f"<div class='wow-mini'><b>{t(lang,'table')}</b></div>", unsafe_allow_html=True)
         st.dataframe(df_f, use_container_width=True, height=420)
+
         d1, d2 = st.columns(2)
         with d1:
             st.download_button(
@@ -2079,13 +1728,18 @@ def page_dashboard():
             )
 
 
+# ============================================================
+# Agent Studio (runs agents one-by-one; editable prompts/models)
+# ============================================================
 def page_agents():
     st.markdown(f"<div class='wow-card'><h3 style='margin:0'>{t(lang,'nav_agents')}</h3></div>", unsafe_allow_html=True)
     load_data_ui()
+
     df = st.session_state["std_df"]
     if df is None or df.empty:
         return
 
+    # Ensure cfg from YAML text
     cfg, err = load_agents_yaml(st.session_state["agents_yaml_text"])
     if err:
         st.error(f"{t(lang,'invalid_yaml')}: {err}")
@@ -2099,7 +1753,7 @@ def page_agents():
         summary = compute_summary(df)
         sample = df.head(20).to_csv(index=False)
         base_context = f"""DATASET SUMMARY (JSON):
-{json.dumps(summary, ensure_ascii=False, indent=2)}
+{json.dumps(summary, ensure_ascii=False, indent=2, default=str)}
 
 USER INSTRUCTIONS (optional):
 {st.session_state.get('viz_instructions','')}
@@ -2120,6 +1774,7 @@ SAMPLE RECORDS (CSV, first 20):
 
     with right:
         st.markdown(f"<div class='wow-mini'><b>{t(lang,'agent_pipeline')}</b></div>", unsafe_allow_html=True)
+
         agents = st.session_state["agents_cfg"].get("agents", [])
         if not agents:
             st.warning("No agents in config.")
@@ -2138,6 +1793,7 @@ SAMPLE RECORDS (CSV, first 20):
         )
         model = st.selectbox(t(lang, "model_select"), pmap[provider], index=0, key="agent_model")
 
+        # user can adjust per run
         max_tokens = st.number_input(t(lang, "max_tokens"), min_value=512, max_value=12000, value=int(agent.get("max_tokens", 3500)), step=256, key="agent_max_tokens")
         temperature = st.slider(t(lang, "temperature"), 0.0, 1.0, float(agent.get("temperature", 0.2)), 0.05, key="agent_temp")
 
@@ -2146,7 +1802,7 @@ SAMPLE RECORDS (CSV, first 20):
 
         if st.button(t(lang, "run_agent"), use_container_width=True, key="run_agent_btn"):
             env_primary = {"openai": "OPENAI_API_KEY", "gemini": "GEMINI_API_KEY", "anthropic": "ANTHROPIC_API_KEY", "xai": "XAI_API_KEY"}[provider]
-            api_key, _ = get_api_key(env_primary)
+            api_key, src = get_api_key(env_primary)
             if not api_key:
                 st.error(f"{env_primary} missing.")
             else:
@@ -2208,307 +1864,6 @@ SAMPLE RECORDS (CSV, first 20):
                         st.rerun()
 
 
-def _load_compare_one(prefix: str):
-    mode_key = f"{prefix}_mode"
-    paste_key = f"{prefix}_paste"
-    raw_key = f"{prefix}_raw"
-    std_key = f"{prefix}_std"
-    rep_key = f"{prefix}_report"
-
-    mode = st.session_state.get(mode_key, "default")
-    st.session_state[mode_key] = st.selectbox(
-        "Mode",
-        ["paste", "upload", "default"],
-        index=["paste", "upload", "default"].index(mode),
-        key=f"{prefix}_mode_sel",
-    )
-
-    mode = st.session_state[mode_key]
-    raw_df = None
-
-    if mode == "default":
-        raw_df = load_defaultdataset_df()
-        if raw_df is None or raw_df.empty:
-            st.warning(t(lang, "default_missing"))
-        else:
-            st.caption(f"Loaded default dataset from: {DEFAULT_DATASET_PATH}")
-        st.session_state[raw_key] = raw_df
-
-    elif mode == "paste":
-        st.session_state[paste_key] = st.text_area(
-            f"{t(lang,'paste')} dataset (CSV/JSON/TXT)",
-            value=st.session_state.get(paste_key) or "",
-            height=160,
-            key=f"{prefix}_paste_area",
-        )
-        if st.button(t(lang, "parse_load"), use_container_width=True, key=f"{prefix}_parse_paste"):
-            try:
-                raw_df = parse_dataset_blob(st.session_state[paste_key])
-                st.session_state[raw_key] = raw_df
-            except Exception as e:
-                st.error(f"Parse failed: {e}")
-        raw_df = st.session_state.get(raw_key)
-
-    else:
-        up = st.file_uploader(f"{t(lang,'upload')} dataset (txt/csv/json)", type=["txt", "csv", "json"], key=f"{prefix}_upload_file")
-        if up:
-            try:
-                raw_df = parse_dataset_blob(up.read(), filename=up.name)
-                st.session_state[raw_key] = raw_df
-            except Exception as e:
-                st.error(f"Parse failed: {e}")
-        raw_df = st.session_state.get(raw_key)
-
-    if raw_df is None or raw_df.empty:
-        st.warning("No dataset loaded yet.")
-        return
-
-    st.markdown(f"<div class='wow-mini'><b>{t(lang,'preview_20')} (raw)</b></div>", unsafe_allow_html=True)
-    st.dataframe(raw_df.head(20), use_container_width=True, height=240)
-
-    std_df, rep = standardize_distribution_df(raw_df)
-    st.session_state[std_key] = std_df
-    st.session_state[rep_key] = rep
-
-    st.markdown(f"<div class='wow-mini'><b>{t(lang,'preview_20')} (standardized)</b></div>", unsafe_allow_html=True)
-    st.dataframe(std_df.head(20), use_container_width=True, height=240)
-
-
-def compare_two_datasets_page():
-    st.markdown(f"<div class='wow-card'><h3 style='margin:0'>{t(lang,'nav_compare')}</h3></div>", unsafe_allow_html=True)
-
-    # NEW: reload default dataset for compare
-    c1, c2 = st.columns([1, 3])
-    with c1:
-        if st.button(t(lang, "reload_default"), use_container_width=True, key="reload_default_compare"):
-            reload_default_dataset_into_compare()
-            st.success("Reloaded default dataset into compare A/B.")
-            st.rerun()
-    with c2:
-        st.caption(f"Default dataset file: `{DEFAULT_DATASET_PATH}`")
-
-    top_tabs = st.tabs([t(lang, "dataset_a"), t(lang, "dataset_b"), "Compare Dashboard", "AI Prompts"])
-
-    with top_tabs[0]:
-        _load_compare_one("cmpA")
-        with st.expander(t(lang, "standardization_report"), expanded=False):
-            st.markdown(st.session_state.get("cmpA_report", ""))
-
-    with top_tabs[1]:
-        _load_compare_one("cmpB")
-        with st.expander(t(lang, "standardization_report"), expanded=False):
-            st.markdown(st.session_state.get("cmpB_report", ""))
-
-    with top_tabs[2]:
-        dfA = st.session_state.get("cmpA_std", pd.DataFrame(columns=CANON))
-        dfB = st.session_state.get("cmpB_std", pd.DataFrame(columns=CANON))
-
-        if (dfA is None or dfA.empty) and (dfB is None or dfB.empty):
-            st.warning("請先在「資料集 A / B」頁籤載入資料。")
-            return
-
-        st.markdown("<div class='wow-mini'><b>各資料集篩選條件（獨立）</b></div>", unsafe_allow_html=True)
-        colA, colB = st.columns(2, gap="large")
-
-        def filter_ui(df: pd.DataFrame, key_prefix: str):
-            if df is None or df.empty:
-                st.info("No data")
-                return [], [], [], [], None, ""
-            supplier_opts = sorted(df["supplier_id"].dropna().unique().tolist())
-            license_opts = sorted(df["license_no"].dropna().unique().tolist())
-            model_opts = sorted(df["model"].dropna().unique().tolist())
-            customer_opts = sorted(df["customer_id"].dropna().unique().tolist())
-
-            supplier_ids = st.multiselect(t(lang, "supplier_id"), supplier_opts, default=[], key=f"{key_prefix}_supplier")
-            license_nos = st.multiselect(t(lang, "license_no"), license_opts, default=[], key=f"{key_prefix}_license")
-            models = st.multiselect(t(lang, "model"), model_opts, default=[], key=f"{key_prefix}_model")
-            customer_ids = st.multiselect(t(lang, "customer_id"), customer_opts, default=[], key=f"{key_prefix}_customer")
-
-            dmin = df["deliver_date"].min()
-            dmax = df["deliver_date"].max()
-            date_rng = None
-            if pd.isna(dmin) or pd.isna(dmax):
-                st.caption(t(lang, "date_range") + "：（無有效日期）")
-            else:
-                default_range = (pd.to_datetime(dmin).date(), pd.to_datetime(dmax).date())
-                picked = st.date_input(t(lang, "date_range"), value=default_range, key=f"{key_prefix}_date")
-                if isinstance(picked, tuple) and len(picked) == 2:
-                    date_rng = (picked[0], picked[1])
-                else:
-                    date_rng = default_range
-
-            q = st.text_input(t(lang, "search"), value="", key=f"{key_prefix}_q")
-            return supplier_ids, license_nos, models, customer_ids, date_rng, q
-
-        with colA:
-            st.markdown(f"<div class='wow-mini'><b>{t(lang,'dataset_a')} Filters</b></div>", unsafe_allow_html=True)
-            a_sup, a_lic, a_mod, a_cus, a_date, a_q = filter_ui(dfA, "cmpAflt")
-        with colB:
-            st.markdown(f"<div class='wow-mini'><b>{t(lang,'dataset_b')} Filters</b></div>", unsafe_allow_html=True)
-            b_sup, b_lic, b_mod, b_cus, b_date, b_q = filter_ui(dfB, "cmpBflt")
-
-        dfA_f = apply_filters(dfA, a_sup, a_lic, a_mod, a_cus, a_date, a_q) if dfA is not None else pd.DataFrame(columns=CANON)
-        dfB_f = apply_filters(dfB, b_sup, b_lic, b_mod, b_cus, b_date, b_q) if dfB is not None else pd.DataFrame(columns=CANON)
-
-        labelA = "A"
-        labelB = "B"
-        sA = compute_summary(dfA_f)
-        sB = compute_summary(dfB_f)
-
-        st.divider()
-        st.markdown(f"<div class='wow-mini'><b>{t(lang,'compare_summary')}</b></div>", unsafe_allow_html=True)
-        st.markdown(compare_summary_markdown(sA, sB, labelA, labelB))
-
-        st.divider()
-        st.markdown("<div class='wow-mini'><b>5 Graphs (Comparison)</b></div>", unsafe_allow_html=True)
-
-        g1, g2 = st.columns(2)
-        with g1:
-            st.caption("Graph 1) KPI Comparison")
-            st.plotly_chart(build_compare_kpi_bar(sA, sB, labelA, labelB), use_container_width=True, key="cmp_kpi_bar")
-        with g2:
-            st.caption("Graph 2) Trend Overlay (Daily)")
-            tsA = compute_timeseries(dfA_f, freq="D")
-            tsB = compute_timeseries(dfB_f, freq="D")
-            st.plotly_chart(build_compare_timeseries(tsA, tsB, labelA, labelB), use_container_width=True, key="cmp_ts_overlay")
-
-        g3, g4 = st.columns(2)
-        with g3:
-            st.caption("Graph 3) Top Suppliers (A vs B)")
-            st.plotly_chart(build_compare_top_bar(dfA_f, dfB_f, "supplier_id", 15, labelA, labelB), use_container_width=True, key="cmp_top_sup")
-        with g4:
-            st.caption("Graph 4) Top Models (A vs B)")
-            st.plotly_chart(build_compare_top_bar(dfA_f, dfB_f, "model", 15, labelA, labelB), use_container_width=True, key="cmp_top_model")
-
-        st.caption("Graph 5) Distribution Network Graph (click node → show details)")
-        figN, node_meta = build_compare_network_clickable(dfA_f, dfB_f, labelA, labelB, max_nodes_per_layer=30)
-
-        if HAS_PLOTLY_EVENTS:
-            selected = plotly_events(figN, click_event=True, hover_event=False, select_event=False,
-                                     override_height=620, override_width="100%")
-            if selected and "pointIndex" in selected[0]:
-                idx = selected[0]["pointIndex"]
-                if 0 <= idx < len(node_meta):
-                    st.session_state["cmp_clicked_node"] = node_meta[idx]
-        else:
-            st.info(t(lang, "click_hint"))
-            st.plotly_chart(figN, use_container_width=True, key="cmp_network_noevents")
-
-        st.divider()
-        st.markdown("<div class='wow-mini'><b>Node Details / Records</b></div>", unsafe_allow_html=True)
-        clicked = st.session_state.get("cmp_clicked_node")
-        if clicked:
-            layer = clicked["layer"]
-            value = clicked["value"]
-            presence = clicked["presence"]
-            st.markdown(f"- **Clicked**: `{layer}` = `{value}` | presence = **{presence}**")
-
-            layer_key = layer.lower()
-            if layer_key.startswith("supplier"):
-                key = "supplier"
-            elif layer_key.startswith("license"):
-                key = "license"
-            elif layer_key.startswith("model"):
-                key = "model"
-            else:
-                key = "customer"
-
-            subA = node_filter(dfA_f, key, value)
-            subB = node_filter(dfB_f, key, value)
-
-            c1, c2 = st.columns(2)
-            with c1:
-                st.markdown(f"<div class='wow-mini'><b>Dataset A: matched rows = {len(subA)}</b></div>", unsafe_allow_html=True)
-                st.dataframe(subA.head(20), use_container_width=True, height=260) if not subA.empty else st.write("—")
-            with c2:
-                st.markdown(f"<div class='wow-mini'><b>Dataset B: matched rows = {len(subB)}</b></div>", unsafe_allow_html=True)
-                st.dataframe(subB.head(20), use_container_width=True, height=260) if not subB.empty else st.write("—")
-        else:
-            st.caption("尚未選取節點。")
-
-    with top_tabs[3]:
-        st.markdown("<div class='wow-mini'><b>AI Prompts (keep with datasets)</b></div>", unsafe_allow_html=True)
-        pmap = provider_model_map()
-        st.session_state["cmp_provider"] = st.selectbox(t(lang, "provider"), list(pmap.keys()),
-                                                        index=list(pmap.keys()).index(st.session_state["cmp_provider"]) if st.session_state["cmp_provider"] in pmap else 0,
-                                                        key="cmp_provider_sel")
-        st.session_state["cmp_model"] = st.selectbox(t(lang, "model_select"), pmap[st.session_state["cmp_provider"]],
-                                                     index=0, key="cmp_model_sel")
-        st.session_state["cmp_max_tokens"] = st.number_input(t(lang, "max_tokens"), min_value=512, max_value=12000,
-                                                             value=int(st.session_state["cmp_max_tokens"]), step=256, key="cmp_max_tokens")
-        st.session_state["cmp_temperature"] = st.slider(t(lang, "temperature"), 0.0, 1.0, float(st.session_state["cmp_temperature"]), 0.05, key="cmp_temp")
-
-        st.divider()
-        st.session_state["cmpA_prompt"] = st.text_area(f"{t(lang,'dataset_a')} — {t(lang,'ai_prompt')}",
-                                                       value=st.session_state["cmpA_prompt"], height=120, key="cmpA_prompt_area")
-        st.session_state["cmpB_prompt"] = st.text_area(f"{t(lang,'dataset_b')} — {t(lang,'ai_prompt')}",
-                                                       value=st.session_state["cmpB_prompt"], height=120, key="cmpB_prompt_area")
-        st.session_state["cmpCompare_prompt"] = st.text_area(f"{t(lang,'compare_summary')} — {t(lang,'ai_prompt')}",
-                                                             value=st.session_state["cmpCompare_prompt"], height=140, key="cmpCompare_prompt_area")
-
-        if st.button(t(lang, "ai_run"), use_container_width=True, key="cmp_ai_run_btn"):
-            dfA = st.session_state.get("cmpA_std", pd.DataFrame(columns=CANON))
-            dfB = st.session_state.get("cmpB_std", pd.DataFrame(columns=CANON))
-
-            sA = compute_summary(dfA)
-            sB = compute_summary(dfB)
-            sampleA = dfA.head(20).to_csv(index=False) if dfA is not None else ""
-            sampleB = dfB.head(20).to_csv(index=False) if dfB is not None else ""
-
-            provider = st.session_state["cmp_provider"]
-            model = st.session_state["cmp_model"]
-            env_primary = {"openai": "OPENAI_API_KEY", "gemini": "GEMINI_API_KEY", "anthropic": "ANTHROPIC_API_KEY", "xai": "XAI_API_KEY"}[provider]
-            api_key, _ = get_api_key(env_primary)
-            if not api_key:
-                st.error(f"{env_primary} missing.")
-            else:
-                try:
-                    sys = (st.session_state["skill_md_text"].strip() + "\n\n" +
-                           "你將比較兩份配送資料集 A/B。輸出繁體中文 Markdown。不得捏造。若輸入不足請標示 Gap。").strip()
-                    user = f"""## 資料集 A 提示詞
-{st.session_state['cmpA_prompt']}
-
-## 資料集 B 提示詞
-{st.session_state['cmpB_prompt']}
-
-## 比較提示詞
-{st.session_state['cmpCompare_prompt']}
-
----
-
-### A 摘要（JSON）
-{json.dumps(sA, ensure_ascii=False, indent=2)}
-
-### B 摘要（JSON）
-{json.dumps(sB, ensure_ascii=False, indent=2)}
-
-### A 樣本（前 20 筆 CSV）
-{sampleA}
-
-### B 樣本（前 20 筆 CSV）
-{sampleB}
-"""
-                    with st.spinner("Running AI..."):
-                        out = call_llm_text(
-                            provider=provider,
-                            model=model,
-                            api_key=api_key,
-                            system=sys,
-                            user=user,
-                            max_tokens=int(st.session_state["cmp_max_tokens"]),
-                            temperature=float(st.session_state["cmp_temperature"]),
-                        )
-                    st.session_state["cmp_ai_note"] = out
-                    st.success("AI summary generated.")
-                except Exception as e:
-                    st.error(f"AI failed: {e}")
-                    st.code(traceback.format_exc())
-
-        st.divider()
-        st.markdown(f"<div class='wow-mini'><b>AI Output</b></div>", unsafe_allow_html=True)
-        st.markdown(st.session_state.get("cmp_ai_note", "") or "—")
-
-
 # ============================================================
 # Router
 # ============================================================
@@ -2518,7 +1873,5 @@ elif page == t(lang, "nav_agents"):
     page_agents()
 elif page == t(lang, "nav_config"):
     config_studio_page()
-elif page == t(lang, "nav_compare"):
-    compare_two_datasets_page()
 else:
     page_dashboard()
